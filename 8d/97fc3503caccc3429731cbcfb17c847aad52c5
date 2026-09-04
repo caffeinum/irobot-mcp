@@ -1,0 +1,35 @@
+src/errors.js
+  s_0f0f5326182d38::t_8a3477f7889aa6 1-177
+bin/roomba.js
+  s_0f0f5326182d38::t_400db64e56d96d 1-5
+package.json
+  s_0f0f5326182d38::t_0eeaa867dfb226 15-16
+src/robot.js
+  s_0f0f5326182d38::t_949642acf17d29 1-155
+src/mcp.js
+  s_0f0f5326182d38::t_177c922fb4a8c0 1-156
+bin/irobot-mcp.js
+  s_0f0f5326182d38::t_0eeaa867dfb226 1-6
+src/cli.js
+  s_0f0f5326182d38::t_3ad85fe08ce180 1-184
+src/password.js
+  s_0f0f5326182d38::t_62dfc89d0c71e7 6-11,25-27,35,37-38,43,48-58,69-72,74-75,78
+package-lock.json
+  s_0f0f5326182d38::t_64aa646fa4b3c6 13-14,2459-2461
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "8d97fc3503caccc3429731cbcfb17c847aad52c5",
+  "prompts": {},
+  "sessions": {
+    "s_0f0f5326182d38": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "61f2528c-b5b3-473a-b61b-095559d2aeff",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Aleksey Bykhun <theisease@gmail.com>"
+    }
+  }
+}
