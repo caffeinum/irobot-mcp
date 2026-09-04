@@ -159,6 +159,14 @@ export class RobotConnection {
     });
   }
 
+  /** Subscribe to live state pushes. Returns an unsubscribe function. */
+  subscribe(listener) {
+    if (!this.#client) throw new Error("Not connected. Call connect() first.");
+    const handler = () => listener(this.snapshot());
+    this.#client.on("state", handler);
+    return () => this.#client?.removeListener("state", handler);
+  }
+
   /** Full raw state plus a decoded, plain-language reading of it. */
   snapshot() {
     const s = this.#state;

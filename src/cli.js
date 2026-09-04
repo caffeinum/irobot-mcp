@@ -2,6 +2,7 @@ import { discover } from "./discover.js";
 import { pair } from "./pair.js";
 import { readConfig, CONFIG_FILE } from "./config.js";
 import { RobotConnection, withRobot } from "./robot.js";
+import { serveDashboard } from "./server.js";
 import { explain } from "./errors.js";
 
 const USAGE = `roomba — control a local-network iRobot Roomba
@@ -18,6 +19,7 @@ const USAGE = `roomba — control a local-network iRobot Roomba
   roomba find                make it beep so you can find it
   roomba evac                empty the bin into the base     [MOVES]
   roomba watch               stream live state until ctrl-c
+  roomba dashboard           local web dashboard (live state + controls)
   roomba raw                 dump the full raw state object
 
 Options:
@@ -35,6 +37,7 @@ function parseArgs(argv) {
     if (a === "--json") args.json = true;
     else if (a === "--ip") args.ip = argv[++i];
     else if (a === "--timeout") args.timeout = Number(argv[++i]) * 1000;
+    else if (a === "--port") args.port = Number(argv[++i]);
     else if (a === "-h" || a === "--help") args.help = true;
     else args._.push(a);
   }
@@ -143,6 +146,14 @@ async function cmdWatch(args) {
   });
 }
 
+async function cmdDashboard(args) {
+  const port = args.port ?? 8080;
+  const { url } = await serveDashboard({ port, overrides: { ip: args.ip } });
+  console.log(`dashboard: ${url}`);
+  // Keep the process alive; SIGINT handler in the server shuts it down.
+  await new Promise(() => {});
+}
+
 const HANDLERS = {
   discover: cmdDiscover,
   pair: cmdPair,
@@ -150,6 +161,7 @@ const HANDLERS = {
   why: cmdWhy,
   raw: cmdRaw,
   watch: cmdWatch,
+  dashboard: cmdDashboard,
   start: (a) => cmdSend("start", a),
   clean: (a) => cmdSend("clean", a),
   pause: (a) => cmdSend("pause", a),

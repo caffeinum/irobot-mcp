@@ -58,7 +58,24 @@ node bin/roomba.js find     # beep — the safe way to locate it
 node bin/roomba.js start    # begins a cleaning mission (it moves!)
 node bin/roomba.js dock     # send it home
 node bin/roomba.js watch    # live stream until ctrl-c
+node bin/roomba.js dashboard   # local web UI at http://localhost:8080
 ```
+
+## Dashboard
+
+```sh
+node bin/roomba.js dashboard --port 8080
+```
+
+A dependency-free local web dashboard: live battery / bin / dock / wifi, the
+plain-language "why" reading front and centre, lifetime counters, and buttons
+for start / pause / stop / dock / find (motion buttons confirm first). State
+streams to the browser over server-sent events, so it updates on its own with no
+polling. It runs entirely on `localhost` — no cloud.
+
+Like `watch`, the dashboard holds the robot's single connection slot for as long
+as it's open, so the iRobot phone app falls back to cloud while it runs. The UI
+says so.
 
 Add `--json` to any command for machine-readable output. Add `--ip <addr>` to
 skip auto-detection.
