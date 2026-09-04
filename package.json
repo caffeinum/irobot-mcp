@@ -12,6 +12,7 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "dorita980": "^4.0.0"
+    "dorita980": "^4.0.0",
+    "zod": "^3.25.76"
   }
 }
