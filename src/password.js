@@ -3,12 +3,12 @@ import { legacyTlsOptions } from "./tls.js";
 
 const MAGIC = Buffer.from("f005efcc3b2900", "hex");
 const PORT = 8883;
-// The robot frames its reply as <13-byte header><password>. On some firmware a
-// 2-byte length packet arrives first, which shifts the header to 9 bytes.
-const DEFAULT_SLICE = 13;
-const SHORT_SLICE = 9;
-// After the first byte, wait this long for trailing TCP segments before deciding.
-const GRACE_MS = 800;
+// The reply is framed as: 0xf0 <length> <5-byte echo of efcc3b2900> <password>.
+// The password begins right after that echo. dorita980 hardcodes 13, but this
+// daredevil firmware uses a 7-byte header — so we locate the echo instead of
+// assuming a fixed offset.
+const ECHO = Buffer.from("efcc3b2900", "hex");
+const FALLBACK_SLICE = 13;
 
 export class ButtonNotHeldError extends Error {
   constructor(ip) {
@@ -20,40 +20,30 @@ export class ButtonNotHeldError extends Error {
   }
 }
 
+function looksLikeState(buf) {
+  // The local broker also pushes state JSON on this socket. A password never
+  // contains a JSON object; a state dump always does.
+  const s = buf.toString("utf8");
+  return s.includes('"state"') || s.includes('"reported"') || s.includes('wifistat') || /[{}]/.test(s.slice(DEFAULT_SLICE));
+}
+
 /**
- * Extract the local MQTT password. Only works while the robot is in its
- * post-chirp window after HOME/DOCK is held down. Accumulates every TCP segment
- * and only decides once the robot goes quiet, so a password split across
- * packets is never truncated.
+ * Extract the local MQTT password. Reads ONLY the robot's first reply packet —
+ * the password arrives as a single framed message, and later packets on this
+ * socket are unrelated state pushes that must not be concatenated onto it.
  * @param {string} ip
  * @param {{timeoutMs?: number}} opts
  * @returns {Promise<string>}
  */
 export function getPassword(ip, { timeoutMs = 10000 } = {}) {
   return new Promise((resolve, reject) => {
-    const chunks = [];
-    let sliceFrom = DEFAULT_SLICE;
     let settled = false;
-    let graceTimer = null;
-
     const finish = (fn, arg) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      clearTimeout(graceTimer);
       sock.destroy();
       fn(arg);
-    };
-
-    const decide = () => {
-      const buf = Buffer.concat(chunks);
-      if (buf.length <= 7) return finish(reject, new ButtonNotHeldError(ip));
-      // Strip a single trailing null byte the framing sometimes leaves.
-      let end = buf.length;
-      if (buf[end - 1] === 0) end -= 1;
-      const password = buf.subarray(sliceFrom, end).toString("utf8");
-      if (!password) return finish(reject, new ButtonNotHeldError(ip));
-      finish(resolve, password);
     };
 
     const sock = tls.connect(PORT, ip, legacyTlsOptions(), () => {
@@ -65,17 +55,31 @@ export function getPassword(ip, { timeoutMs = 10000 } = {}) {
       timeoutMs,
     );
 
-    sock.on("data", (chunk) => {
-      // A lone 2-byte length prefix shifts where the password starts.
-      if (chunks.length === 0 && chunk.length === 2) {
-        sliceFrom = SHORT_SLICE;
+    // One event = one framed reply. Do not wait for or merge later packets.
+    sock.once("data", (data) => {
+      if (process.env.IROBOT_DEBUG) {
+        console.error(`[password] first packet: ${data.length} bytes, hex head ${data.subarray(0, 16).toString("hex")}`);
       }
-      chunks.push(chunk);
-      clearTimeout(graceTimer);
-      graceTimer = setTimeout(decide, GRACE_MS);
+      if (data.length <= 7) return finish(reject, new ButtonNotHeldError(ip));
+      // Password starts right after the echoed magic; fall back to a fixed
+      // offset if the echo isn't found where expected.
+      const echoAt = data.indexOf(ECHO);
+      const sliceFrom = echoAt >= 0 ? echoAt + ECHO.length : FALLBACK_SLICE;
+      if (looksLikeState(data)) {
+        return finish(
+          reject,
+          new Error(
+            `Robot at ${ip} streamed state instead of a password. It answered the magic packet ` +
+              `outside its button window. Hold HOME/DOCK until it chirps, release, then retry immediately.`,
+          ),
+        );
+      }
+      let end = data.length;
+      if (data[end - 1] === 0) end -= 1; // strip a single trailing null
+      const password = data.subarray(sliceFrom, end).toString("utf8");
+      if (!password) return finish(reject, new ButtonNotHeldError(ip));
+      finish(resolve, password);
     });
-
-    sock.on("end", decide);
 
     sock.on("error", (err) =>
       finish(
