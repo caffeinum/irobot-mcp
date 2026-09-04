@@ -131,4 +131,17 @@ real home. `find` (a beep) is the safe way to identify the robot.
 `roomba why` and `roomba_error_codes` decode `cleanMissionStatus.error`. A few
 common ones: `1` left wheel off floor, `6` stuck near a cliff, `14` bin missing,
 `15` reboot required, `36` bin full, `46` low battery. Full table in
-`src/errors.js`.
+`src/errors.js`. Unknown codes are reported as `Unknown error code N` — never
+guessed at.
+
+### What we deliberately do NOT decode
+
+The raw state also carries `bbpause.pauses`, an array of the last ~10 missions'
+stop codes (e.g. `[18, 46, 46, 46, 6, 33, ...]`). These *look* like they use the
+same enum as `cleanMissionStatus.error`, and they decode into a plausible story
+(repeated `46`s reading as "low battery" on a robot that recharges mid-run). We
+do **not** decode this array anywhere in the tool, because that shared-enum
+assumption is unconfirmed — a satisfying-but-wrong decode is worse than none.
+`roomba why` decodes only `cleanMissionStatus.error` / `notReady`, which are the
+documented fields. If you can tie `bbpause` to a documented code table, that's
+the thread to pull — see `src/errors.js`.
