@@ -1,0 +1,34 @@
+src/discover.js
+  s_0f0f5326182d38::t_44867fa4fc05f8 1-80
+src/tls.js
+  s_0f0f5326182d38::t_e6843f03b32853 1-21
+src/password.js
+  s_0f0f5326182d38::t_5d95491ebc3b63 1-71
+src/config.js
+  s_0f0f5326182d38::t_c88b5bf0514bdd 1-45
+package.json
+  s_0f0f5326182d38::t_1a4146e21e9f25 6-11,13-16
+  s_0f0f5326182d38::t_3599bdfaf66553 1-5,12,17
+src/pair.js
+  s_0f0f5326182d38::t_fc20d51a007d9e 1-73
+.gitignore
+  s_0f0f5326182d38::t_7617224a083673 1-6
+package-lock.json
+  s_0f0f5326182d38::t_588e99efc12fd8 1-2476
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "cd4ff42f9f09c863e87b32f4ec6cd0b9f8e345ee",
+  "prompts": {},
+  "sessions": {
+    "s_0f0f5326182d38": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "61f2528c-b5b3-473a-b61b-095559d2aeff",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Aleksey Bykhun <theisease@gmail.com>"
+    }
+  }
+}
