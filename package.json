@@ -1,0 +1,17 @@
+{
+  "name": "irobot-mcp",
+  "version": "0.1.0",
+  "description": "CLI + MCP server for controlling a local-network iRobot Roomba over MQTT",
+  "type": "module",
+  "bin": {
+    "roomba": "bin/roomba.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "dorita980": "^4.0.0"
+  }
+}
