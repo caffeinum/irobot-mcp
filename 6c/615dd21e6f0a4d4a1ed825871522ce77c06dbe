@@ -1,0 +1,19 @@
+README.md
+  s_0f0f5326182d38::t_df34fd05a76580 1-134
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "6c615dd21e6f0a4d4a1ed825871522ce77c06dbe",
+  "prompts": {},
+  "sessions": {
+    "s_0f0f5326182d38": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "61f2528c-b5b3-473a-b61b-095559d2aeff",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Aleksey Bykhun <theisease@gmail.com>"
+    }
+  }
+}
