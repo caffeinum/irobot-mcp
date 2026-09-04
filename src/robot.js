@@ -9,6 +9,22 @@ const { Local } = dorita980;
 /** Commands that make the robot physically move. */
 export const MOTION_COMMANDS = new Set(["start", "clean", "cleanRoom", "resume", "dock", "train", "evac"]);
 
+/**
+ * The mission cycle each command should drive the robot into, used to confirm a
+ * command actually landed before we drop the (single) connection. Commands not
+ * listed here (find, pause) don't change cycle and fall back to a fixed settle.
+ */
+const EXPECTED_CYCLE = {
+  start: ["clean", "quick", "spot"],
+  clean: ["clean", "quick", "spot"],
+  cleanRoom: ["clean", "quick", "spot"],
+  stop: ["none"],
+  dock: ["dock"],
+  resume: ["clean", "quick", "spot"],
+  evac: ["evac", "dock"],
+  train: ["train"],
+};
+
 /** Every mission-level command the hardware actually supports. There is no drive/turn. */
 export const COMMANDS = [
   "start",
@@ -107,11 +123,40 @@ export class RobotConnection {
           `There is no drive/turn/motor control on wifi Roombas.`,
       );
     }
-    if (command === "cleanRoom") {
-      if (!args) throw new Error("cleanRoom requires a region argument ({pmap_id, regions, user_pmapv_id}).");
-      return this.#client.cleanRoom(args);
+    if (command === "cleanRoom" && !args) {
+      throw new Error("cleanRoom requires a region argument ({pmap_id, regions, user_pmapv_id}).");
     }
-    return this.#client[command]();
+    // The publish is MQTT QoS 0: its callback fires when the packet is written
+    // to the socket, NOT when the broker has processed it. Tearing the TLS
+    // connection down immediately (as a connect->send->disconnect CLI does)
+    // races the broker and silently drops the command. So we hold the
+    // connection open until the robot's state actually reflects the command,
+    // falling back to a fixed settle for commands that don't change cycle
+    // (find/pause). This is what makes one-shot CLI commands reliable.
+    await (command === "cleanRoom" ? this.#client.cleanRoom(args) : this.#client[command]());
+    await this.#awaitEffect(command);
+  }
+
+  /** Wait until state reflects a command, or a short settle elapses. */
+  #awaitEffect(command, { timeoutMs = 4000, settleMs = 1500 } = {}) {
+    const expected = EXPECTED_CYCLE[command];
+    if (!expected) return new Promise((r) => setTimeout(r, settleMs));
+    return new Promise((resolve) => {
+      const done = () => {
+        this.#client.removeListener("state", check);
+        clearTimeout(timer);
+        resolve();
+      };
+      const check = (state) => {
+        const cycle = state?.cleanMissionStatus?.cycle;
+        if (expected.includes(cycle)) done();
+      };
+      // Already satisfied?
+      if (expected.includes(this.#state?.cleanMissionStatus?.cycle)) return resolve();
+      this.#client.on("state", check);
+      // Fall back to a settle so we never hang if the robot is slow to reflect it.
+      const timer = setTimeout(done, timeoutMs);
+    });
   }
 
   /** Full raw state plus a decoded, plain-language reading of it. */
@@ -136,8 +181,10 @@ export class RobotConnection {
   }
 
   disconnect() {
+    // Graceful end() flushes any buffered packet before closing; force-close
+    // would discard it. #awaitEffect has already confirmed delivery by here.
     try {
-      this.#client?.end(true);
+      this.#client?.end(false);
     } catch {}
     this.#client = null;
   }
