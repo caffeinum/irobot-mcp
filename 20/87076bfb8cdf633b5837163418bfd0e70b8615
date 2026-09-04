@@ -1,0 +1,21 @@
+src/password.js
+  s_0f0f5326182d38::t_04bdc5c0be4d4a 64-67
+  s_0f0f5326182d38::t_b2a653cdb1e795 6-11
+  s_0f0f5326182d38::t_cf911c48d5b258 23-29,31-33,58-63,68-75,77-81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "2087076bfb8cdf633b5837163418bfd0e70b8615",
+  "prompts": {},
+  "sessions": {
+    "s_0f0f5326182d38": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "61f2528c-b5b3-473a-b61b-095559d2aeff",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Aleksey Bykhun <theisease@gmail.com>"
+    }
+  }
+}
